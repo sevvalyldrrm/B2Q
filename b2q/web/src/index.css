@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-cyan: #00F2FF;
+  --color-secondary-jade: #00FFC8;
+  --color-tertiary-magenta: #FF2E63;
+  --color-neutral-dark: #0B0E11;
+  --font-space-grotesk: "Space Grotesk", sans-serif;
+  --font-inter: "Inter", sans-serif;
+}
+
+:root {
+  background-color: #0B0E11;
+  color: white;
+  font-family: "Inter", sans-serif;
+}
+
+/* Custom glassmorphism and deep terminal styles */
+.glass-panel {
+  background: rgba(29, 32, 35, 0.4);
+  backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.quantum-glow {
+  box-shadow: 0 0 15px rgba(0, 242, 255, 0.3);
+}
+
+.deep-grid {
+  opacity: 0.05;
+}
+
+.invisible-border {
+  border-color: rgba(255, 255, 255, 0.05);
+}
