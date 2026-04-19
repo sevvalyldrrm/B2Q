@@ -7,3 +7,14 @@ services:
     ports:
       - "6379:6379"
     restart: always
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: b2q_rabbitmq
+    ports:
+      - "5672:5672"    # AMQP (uygulama bağlantısı)
+      - "15672:15672"  # Management UI (tarayıcı)
+    environment:
+      RABBITMQ_DEFAULT_USER: b2q
+      RABBITMQ_DEFAULT_PASS: b2q123
+    restart: always
