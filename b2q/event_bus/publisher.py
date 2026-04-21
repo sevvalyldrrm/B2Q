@@ -56,3 +56,11 @@ class EventPublisher:
             "interval": interval,
             "candle":   candle,
         })
+
+    async def quantum_analyzed(self, symbol: str, interval: str, result: dict):
+        """Quantum analiz tamamlandığında fırlatılır."""
+        await self.publish("QUANTUM_ANALYZED", {
+            "symbol":   symbol,
+            "interval": interval,
+            "result":   result,
+        })

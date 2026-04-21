@@ -11,6 +11,8 @@ Hesaplanan metrikler:
 """
 
 import math
+from b2q.quantum_engine.quantum_circuit import quantum_signal
+from b2q.quantum_engine.decision_engine import decide
 
 
 class QuantumAnalyzer:
@@ -44,6 +46,21 @@ class QuantumAnalyzer:
 
         signal = self._signal(quantum, momentum, trend)
 
+        # ── Quantum Circuit (qubit simülasyonu) ──────────────────
+        circuit = quantum_signal(
+            momentum_score   = momentum,
+            volatility_score = volatility,
+            trend_score      = trend,
+        )
+
+        # ── Decision Engine (klasik + qubit birleşik karar) ───────
+        decision = decide(
+            classic_signal = signal,
+            circuit_signal = circuit["signal"],
+            confidence     = circuit["confidence"],
+            quantum_score  = quantum,
+        )
+
         return {
             "symbol":           candles[-1].get("openTime", "")[:10],
             "candle_count":     len(candles),
@@ -53,15 +70,18 @@ class QuantumAnalyzer:
             "trend_score":      round(trend, 2),
             "quantum_score":    quantum,
             "signal":           signal,
+            "circuit":          circuit,
+            "decision":         decision,
         }
 
     # ── Metrik hesaplamaları ──────────────────────────────────────
 
     def _volatility_score(self, closes, highs, lows) -> float:
         """
-        ATR (Average True Range) tabanlı volatilite.
+        Wilder'ın orijinal ATR'si (Smoothed Moving Average of TR).
         Yüksek ATR → yüksek skor.
         """
+        period = 14
         trs = []
         for i in range(1, len(closes)):
             tr = max(
@@ -71,7 +91,15 @@ class QuantumAnalyzer:
             )
             trs.append(tr)
 
-        atr = sum(trs[-14:]) / 14 if len(trs) >= 14 else sum(trs) / len(trs)
+        if len(trs) < period:
+            atr = sum(trs) / len(trs)
+        else:
+            # Seed: ilk 14 TR'nin basit ortalaması
+            atr = sum(trs[:period]) / period
+            # Wilder'ın smoothed avg: ATR(i) = (ATR(i-1) × 13 + TR(i)) / 14
+            for tr in trs[period:]:
+                atr = (atr * (period - 1) + tr) / period
+
         atr_pct = (atr / closes[-1]) * 100  # ATR'yi yüzdeye çevir
 
         # 0-5% aralığını 0-100 skor'a normalize et
@@ -80,21 +108,27 @@ class QuantumAnalyzer:
 
     def _momentum_score(self, closes) -> float:
         """
-        RSI tabanlı momentum (14 periyot).
+        Wilder'ın orijinal RSI'ı (Smoothed Moving Average of gains/losses).
+        14 periyot.
         """
+        period = 14
         gains, losses = [], []
         for i in range(1, len(closes)):
             diff = closes[i] - closes[i - 1]
-            if diff > 0:
-                gains.append(diff)
-                losses.append(0)
-            else:
-                gains.append(0)
-                losses.append(abs(diff))
+            gains.append(max(diff, 0))
+            losses.append(max(-diff, 0))
 
-        period = 14
-        avg_gain = sum(gains[-period:]) / period
-        avg_loss = sum(losses[-period:]) / period
+        if len(gains) < period:
+            avg_gain = sum(gains) / len(gains)
+            avg_loss = sum(losses) / len(losses)
+        else:
+            # Seed: ilk 14 periyodun basit ortalaması
+            avg_gain = sum(gains[:period]) / period
+            avg_loss = sum(losses[:period]) / period
+            # Wilder'ın smoothed avg: avg(i) = (avg(i-1) × 13 + val(i)) / 14
+            for g, l in zip(gains[period:], losses[period:]):
+                avg_gain = (avg_gain * (period - 1) + g) / period
+                avg_loss = (avg_loss * (period - 1) + l) / period
 
         if avg_loss == 0:
             return 100.0

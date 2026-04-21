@@ -90,9 +90,6 @@ async def quantum_analyze(
     result["symbol"]   = symbol.upper()
     result["interval"] = interval
 
-    # Event at
-    await publisher.publish("QUANTUM_ANALYZED", result)
-
     return result
 
 
