@@ -55,7 +55,7 @@ const Quantum = () => {
   return (
     <div className="grid grid-cols-12 grid-rows-6 gap-4 p-4 h-[calc(100vh-3.5rem)]">
       {/* Top Panel: Quantum Circuit Activity */}
-      <CircuitActivity isSyncing={isSyncing} />
+      <CircuitActivity isSyncing={isSyncing} data={quantumData} />
       
       {/* Right Panel: IQAE Iteration Log */}
       <IterationLog data={quantumData} onResync={handleResync} isSyncing={isSyncing} />
