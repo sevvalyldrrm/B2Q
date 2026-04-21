@@ -3,6 +3,29 @@ import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 import { RefreshCw } from 'lucide-react';
 
 const IterationLog = ({ data, onResync, isSyncing }) => {
+  const real = data?.realScores;
+  const circuit = real?.circuit;
+  const decision = real?.decision;
+
+  // Convergence grafiği: qubit prob adımlarını sıralı göster
+  const convergenceData = circuit ? [
+    { step: 'Q_RSI', convergence: +(circuit.q1RsiProb * 100).toFixed(1) },
+    { step: 'Q_ATR', convergence: +(circuit.q2AtrProb * 100).toFixed(1) },
+    { step: 'Q_EMA', convergence: +(circuit.q3EmaProb * 100).toFixed(1) },
+    { step: 'JOINT', convergence: +(circuit.jointProb * 100).toFixed(1) },
+  ] : (data?.convergence || []);
+
+  // Log listesi: gerçek karar detayları
+  const logs = decision ? [
+    { iteration: 'CLASSIC SIGNAL',   delta: real?.signal         || '—' },
+    { iteration: 'CIRCUIT SIGNAL',   delta: circuit?.signal      || '—' },
+    { iteration: 'FINAL DECISION',   delta: decision?.finalDecision || '—' },
+    { iteration: 'DECISION SCORE',   delta: decision?.decisionScore >= 0 ? `+${decision.decisionScore}` : `${decision.decisionScore}` },
+    { iteration: 'CONFIDENCE',       delta: `${circuit?.confidence?.toFixed(2)}%` },
+    { iteration: 'AGREEMENT',        delta: decision?.agreement ? 'YES ✓' : 'NO ✗' },
+    { iteration: 'QUANTUM SCORE',    delta: real?.quantumScore?.toFixed(2) },
+    { iteration: 'JOINT PROB',       delta: circuit?.jointProb?.toFixed(4) },
+  ] : (data?.logs || []);
 
   return (
     <div className="col-span-3 row-span-6 glass-panel flex flex-col relative">
@@ -15,14 +38,19 @@ const IterationLog = ({ data, onResync, isSyncing }) => {
       {/* Convergence Graph */}
       <div className="p-4 h-48">
         <div className="w-full h-full invisible-border relative">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data?.convergence || []}>
+          <ResponsiveContainer width="100%" height="100%">              <AreaChart data={convergenceData}>
               <defs>
                 <linearGradient id="convergenceGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" style={{ stopColor: '#00dbe7', stopOpacity: 1 }} />
                   <stop offset="100%" style={{ stopColor: '#00dbe7', stopOpacity: 0 }} />
                 </linearGradient>
               </defs>
+              <XAxis 
+                dataKey="step" 
+                tick={{ fontSize: 8, fill: '#9ca3af' }} 
+                tickLine={false} 
+                axisLine={false} 
+              />
               <Area
                 type="monotone"
                 dataKey="convergence"
@@ -45,10 +73,14 @@ const IterationLog = ({ data, onResync, isSyncing }) => {
       
       {/* Iteration Log List */}
       <div className="flex-1 overflow-y-auto px-4 space-y-2 font-mono text-[10px] py-2">
-        {data?.logs?.map((log, index) => (
+        {logs.map((log, index) => (
           <div key={index} className="flex justify-between invisible-border pb-1">
             <span className="text-gray-400">{log.iteration}</span>
-            <span className="text-primary-cyan">{log.delta}</span>
+            <span className={`font-bold ${
+              log.delta === 'YES ✓' ? 'text-secondary-jade' :
+              log.delta === 'NO ✗'  ? 'text-tertiary-magenta' :
+              'text-primary-cyan'
+            }`}>{log.delta}</span>
           </div>
         ))}
       </div>
