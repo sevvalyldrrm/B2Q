@@ -23,12 +23,28 @@ export const api = {
       return {
         ...mockQuantumData, // UI bozulmasın diye diğer grafikleri mock'tan alıyoruz
         realScores: {
-          quantumScore: data.quantum_score,
-          trendScore: data.trend_score,
-          momentumScore: data.momentum_score,
+          quantumScore:    data.quantum_score,
+          trendScore:      data.trend_score,
+          momentumScore:   data.momentum_score,
           volatilityScore: data.volatility_score,
-          signal: data.signal,
-          latestClose: data.latest_close
+          signal:          data.signal,
+          latestClose:     data.latest_close,
+          // Qubit katmanı
+          circuit: {
+            q1RsiProb:  data.circuit?.q1_rsi_prob,
+            q2AtrProb:  data.circuit?.q2_atr_prob,
+            q3EmaProb:  data.circuit?.q3_ema_prob,
+            jointProb:  data.circuit?.joint_prob,
+            confidence: data.circuit?.confidence,
+            signal:     data.circuit?.signal,
+          },
+          // Birleşik karar
+          decision: {
+            finalDecision: data.decision?.final_decision,
+            decisionScore: data.decision?.decision_score,
+            reason:        data.decision?.reason,
+            agreement:     data.decision?.agreement,
+          },
         }
       };
     } catch (error) {

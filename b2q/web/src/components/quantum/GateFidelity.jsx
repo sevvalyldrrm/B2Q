@@ -39,12 +39,16 @@ const GateFidelity = ({ data }) => {
           </div>
         </div>
         <div className="invisible-border p-2 text-center bg-gray-900/50">
-          <div className="text-[10px] text-gray-400 uppercase tracking-tighter">ACTION SIGNAL</div>
-          <div className={`text-lg font-space-grotesk font-black ${
-            real?.signal === 'BUY' ? 'text-secondary-jade' : 
-            real?.signal === 'SELL' ? 'text-tertiary-magenta' : 'text-gray-400'
+          <div className="text-[10px] text-gray-400 uppercase tracking-tighter">FINAL DECISION</div>
+          <div className={`text-sm font-space-grotesk font-black ${
+            ['STRONG_BUY','BUY'].includes(real?.decision?.finalDecision)   ? 'text-secondary-jade' : 
+            ['STRONG_SELL','SELL','WEAK_SELL'].includes(real?.decision?.finalDecision) ? 'text-tertiary-magenta' : 
+            'text-primary-cyan'
           }`}>
-            {real?.signal || "HOLD"}
+            {real?.decision?.finalDecision || real?.signal || 'HOLD'}
+          </div>
+          <div className="text-[8px] text-gray-500 mt-0.5 font-mono">
+            SCORE: {real?.decision?.decisionScore >= 0 ? '+' : ''}{real?.decision?.decisionScore ?? '—'}
           </div>
         </div>
       </div>

@@ -1,13 +1,21 @@
 import React from 'react';
 
 const CircuitActivity = ({ isSyncing, data }) => {
-  // Backend'den gelen sinyali yakala
-  const signal = data?.realScores?.signal || 'SYNCING...';
-  
-  // Sinyale göre renk belirle
-  let signalColor = 'text-primary-cyan border-primary-cyan shadow-[0_0_15px_rgba(0,242,255,0.5)]';
-  if (signal === 'BUY') signalColor = 'text-secondary-jade border-secondary-jade shadow-[0_0_15px_rgba(0,255,200,0.5)]';
-  if (signal === 'SELL') signalColor = 'text-tertiary-magenta border-tertiary-magenta shadow-[0_0_15px_rgba(255,46,99,0.5)]';
+  const signal    = data?.realScores?.signal || 'SYNCING...';
+  const decision  = data?.realScores?.decision;
+  const circuit   = data?.realScores?.circuit;
+  const final     = decision?.finalDecision || signal;
+
+  // Nihai karara göre renk
+  const colorMap = {
+    STRONG_BUY:  'text-secondary-jade  border-secondary-jade  shadow-[0_0_15px_rgba(0,255,200,0.6)]',
+    BUY:         'text-secondary-jade  border-secondary-jade  shadow-[0_0_15px_rgba(0,255,200,0.4)]',
+    HOLD:        'text-primary-cyan    border-primary-cyan    shadow-[0_0_15px_rgba(0,242,255,0.5)]',
+    WEAK_SELL:   'text-tertiary-magenta border-tertiary-magenta shadow-[0_0_15px_rgba(255,46,99,0.3)]',
+    SELL:        'text-tertiary-magenta border-tertiary-magenta shadow-[0_0_15px_rgba(255,46,99,0.5)]',
+    STRONG_SELL: 'text-tertiary-magenta border-tertiary-magenta shadow-[0_0_15px_rgba(255,46,99,0.7)]',
+  };
+  const signalColor = colorMap[final] || colorMap['HOLD'];
 
   return (
     <div className="col-span-9 row-span-3 glass-panel relative overflow-hidden flex items-center justify-center">
@@ -28,12 +36,44 @@ const CircuitActivity = ({ isSyncing, data }) => {
         </h2>
       </div>
 
-      {/* MERKEZİ SİNYAL GÖSTERGESİ (YENİ EKLENDİ) */}
-      <div className="absolute z-20 flex flex-col items-center pointer-events-none">
-        <div className="text-[10px] text-gray-400 font-mono mb-2 uppercase tracking-[0.3em]">AI Prediction Status</div>
+      {/* MERKEZİ SİNYAL GÖSTERGESİ */}
+      <div className="absolute z-20 flex flex-col items-center pointer-events-none gap-2">
+        <div className="text-[10px] text-gray-400 font-mono uppercase tracking-[0.3em]">Final Decision</div>
         <div className={`px-8 py-2 border-2 ${signalColor} bg-black/40 backdrop-blur-md rounded uppercase font-space-grotesk font-black text-4xl tracking-widest transition-all duration-500`}>
-          {isSyncing ? 'CALIBRATING' : signal}
+          {isSyncing ? 'CALIBRATING' : final}
         </div>
+
+        {/* Qubit olasılıkları */}
+        {!isSyncing && circuit && (
+          <div className="flex gap-6 mt-2">
+            {[
+              { label: 'RSI', val: circuit.q1RsiProb },
+              { label: 'ATR', val: circuit.q2AtrProb },
+              { label: 'EMA', val: circuit.q3EmaProb },
+            ].map(({ label, val }) => (
+              <div key={label} className="flex flex-col items-center gap-1">
+                <div className="text-[9px] text-gray-500 font-mono uppercase">{label}</div>
+                <div className="w-20 h-1.5 bg-gray-800 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-700"
+                    style={{
+                      width: `${(val * 100).toFixed(0)}%`,
+                      background: val > 0.5 ? '#00ffc8' : val > 0.2 ? '#00f2ff' : '#ff2e63',
+                    }}
+                  />
+                </div>
+                <div className="text-[9px] text-gray-400 font-mono">{(val * 100).toFixed(0)}%</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Reason */}
+        {!isSyncing && decision?.reason && (
+          <div className="text-[9px] text-gray-500 font-mono max-w-xs text-center mt-1">
+            {decision.reason}
+          </div>
+        )}
       </div>
       
       {/* Quantum SVG Animasyonu  */}
@@ -63,8 +103,8 @@ const CircuitActivity = ({ isSyncing, data }) => {
       {/* Alt Veriler */}
       <div className="absolute bottom-4 left-4 right-4 flex justify-between font-mono text-[10px] text-gray-400 uppercase tracking-tighter">
         <div>TARGET: BTC/USDT</div>
-        <div>MODEL: QUANTUM_V4.2</div>
-        <div>ALGO_STATE: ACTIVE</div>
+        <div>CLASSIC: {signal} | QUBIT: {circuit?.signal || '—'} | AGREE: {decision?.agreement ? '✓' : '✗'}</div>
+        <div>CONFIDENCE: {circuit?.confidence ?? '—'}%</div>
       </div>
     </div>
   );

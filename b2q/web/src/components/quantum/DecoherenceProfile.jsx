@@ -2,20 +2,24 @@ import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 
 const DecoherenceProfile = ({ data }) => {
-  const qubits = data?.qubits || [
+  const circuit = data?.realScores?.circuit;
+
+  // Gerçek qubit prob değerleri varsa onları kullan, yoksa mock'a dön
+  const qubits = circuit ? [
+    { qubit: 'Q_RSI', coherence: +(circuit.q1RsiProb * 100).toFixed(1), label: 'RSI (Momentum)' },
+    { qubit: 'Q_ATR', coherence: +(circuit.q2AtrProb * 100).toFixed(1), label: 'ATR (Volatility)' },
+    { qubit: 'Q_EMA', coherence: +(circuit.q3EmaProb * 100).toFixed(1), label: 'EMA (Trend)' },
+    { qubit: 'JOINT', coherence: +(circuit.jointProb * 100).toFixed(1),  label: 'Joint Entangled' },
+  ] : (data?.qubits || [
     { qubit: 'Q0', coherence: 80 },
     { qubit: 'Q1', coherence: 85 },
     { qubit: 'Q2', coherence: 70 },
     { qubit: 'Q3', coherence: 92 },
-    { qubit: 'Q4', coherence: 75 },
-    { qubit: 'Q5', coherence: 60 },
-    { qubit: 'Q6', coherence: 88 },
-    { qubit: 'Q7', coherence: 95 },
-    { qubit: 'Q8', coherence: 72 },
-    { qubit: 'Q9', coherence: 80 },
-    { qubit: 'Q10', coherence: 85 },
-    { qubit: 'Q11', coherence: 90 }
-  ];
+  ]);
+
+  // T1/T2 değerlerini joint_prob ve confidence'dan türet
+  const t1 = circuit ? `${(circuit.jointProb * 1000).toFixed(1)} μs` : 'N/A';
+  const t2 = circuit ? `${circuit.confidence?.toFixed(2)} (conf)` : '64.2 Avg';
 
   return (
     <div className="col-span-5 row-span-3 glass-panel p-4 relative">
@@ -31,9 +35,7 @@ const DecoherenceProfile = ({ data }) => {
               tickLine={false}
               axisLine={false}
             />
-            <YAxis 
-              hide={true}
-            />
+            <YAxis hide={true} domain={[0, 100]} />
             <Tooltip 
               cursor={false}
               contentStyle={{ 
@@ -41,6 +43,10 @@ const DecoherenceProfile = ({ data }) => {
                 border: '1px solid #374151',
                 fontSize: 10
               }}
+              formatter={(value, name, props) => [
+                `${value}%`,
+                props.payload.label || props.payload.qubit
+              ]}
             />
             <Bar 
               dataKey="coherence" 
@@ -51,15 +57,27 @@ const DecoherenceProfile = ({ data }) => {
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Qubit değerleri listesi (gerçek veri varsa) */}
+      {circuit && (
+        <div className="mb-2 grid grid-cols-4 gap-1 text-center font-mono text-[9px]">
+          {qubits.map((q) => (
+            <div key={q.qubit} className="invisible-border p-1">
+              <div className="text-gray-400">{q.qubit}</div>
+              <div className="text-primary-cyan font-bold">{q.coherence}%</div>
+            </div>
+          ))}
+        </div>
+      )}
       
       {/* Stats */}
-      <div className="mt-4 flex justify-between font-mono text-[9px] text-gray-400 uppercase">
-        <span>T1 Relaxation Time (μs)</span>
-        <span className="text-primary-cyan">Stable</span>
+      <div className="mt-2 flex justify-between font-mono text-[9px] text-gray-400 uppercase">
+        <span>T1 Joint Prob (×1000)</span>
+        <span className="text-primary-cyan">{t1}</span>
       </div>
       <div className="flex justify-between font-mono text-[9px] text-gray-400 uppercase">
-        <span>T2 Dephasing Time (μs)</span>
-        <span className="text-primary-cyan">64.2 Avg</span>
+        <span>T2 Confidence Score</span>
+        <span className="text-primary-cyan">{t2}</span>
       </div>
       
       {/* Legend */}
